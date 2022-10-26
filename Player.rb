@@ -1,85 +1,86 @@
+require 'securerandom'
 require './constants/commands.rb'
 
-module CLIMode
-    def action
-        print "enter command: "
-        command = gets.chomp
-
-        response = {
-            command: command,
-            params: { fleetId: 1, x: 1, y: 1 }
-        }
-        return response
-    end
-end
-
-module DebugMode
-    def action
-        response = {
-            command: COMMANDS[:ATTACK],
-            params: { fleetId: 0, x: 0, y: 0 }
-        }
-        return response
-    end
-end
 
 class Player
-    attr_reader :id, :name, :fleetList
-    def initialize(name)
-        @id = -1
+    attr_reader :userId, :name, :fleet
+    def initialize(userId, name)
+        @userId = userId
         @name = name
-        @fleetList = []
+        @fleet = []
     end
 
-    def addFleet(fleet)
+    def addWarship(warship)
         #
     end
 
-    def setPositionForFleet
+    def setPositionForWarship
         #
     end
 end
 
 class CLIPlayer < Player
-    include CLIMode
-
-    def initialize(name)
+    def initialize(userId, name)
         super
-        @id = 0
+        @fleet = [
+            { id: SecureRandom.uuid, flagShip: true,  position: {x: 0, y: 0} },
+            { id: SecureRandom.uuid, flagShip: false, position: {x: 1, y: 0} },
+            { id: SecureRandom.uuid, flagShip: false, position: {x: 1, y: 1} }
+        ]
     end
 
-    def addFleet(fleet)
-        #@fleetList << {fleet: fleet, x: -1, y: -1}
+    def getVirtualRequest(api)
+        case api
+        when "warship/detail"
+        when "warship/list"
+        when "game/inqueue"
+            response = gameInqueue
+        when "game/ready"
+            response = gameReady
+        when "game/action"
+            response = gameAction
+        else
+        end
+        
+        return response
     end
 
-    def action
-        super
-        #puts "#{@name} command : #{super}"
+    def gameInqueue
+        return {
+            userId: @userId,
+            fleet: [
+                { id: SecureRandom.uuid, flagShip: true},
+                { id: SecureRandom.uuid, flagShip: false},
+                { id: SecureRandom.uuid, flagShip: false},
+            ]
+        }
     end
 
-    def setPositionForFleet(x, y)
-        #
+    def gameReady
+        return {
+            userId: @userId,
+            fleet: @fleet
+        }
+    end
+
+    def gameAction
+        print "enter command: "
+        command = gets.chomp
+
+        return {
+            command: command,
+            params: { id: @fleet[0][:id], x: 1, y: 1 }
+        }
     end
 end
 
-class DebugPlayer < Player
-    include DebugMode
-
-    def initialize(name)
-        super
-        @id = 1
-    end
-
-    def addFleet(fleet)
-        #@fleetList << {fleet: fleet, x: -1, y: -1}
-    end
-
+class DebugPlayer < CLIPlayer
     def action
-        super
-        #puts "#{@name} command : #{super}"
-    end
-
-    def setPositionForFleet(x, y)
-        #
+        response = {
+            userId: @userId,
+            command: COMMANDS[:ATTACK],
+            params: { warshipId: 0, x: 0, y: 0 }
+        }
+        return response
     end
 end
