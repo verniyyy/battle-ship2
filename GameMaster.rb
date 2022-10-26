@@ -1,5 +1,6 @@
-require './constants/commands.rb'
-require './Map.rb'
+require_relative './constants/commands.rb'
+require_relative './Map.rb'
+require_relative './infrastructure/repository/Warship.rb'
 
 class GameMaster
     def initialize(*players)
@@ -9,8 +10,9 @@ class GameMaster
         
 
         @playerList.each do |player|
-            player.fleetList.each do |fleet|
-                @map.setObject(fleet)
+            player.fleet.each do |warshipInfo|
+                warship = WarshipRepository.get(player.userId, warshipInfo[:id])
+                @map.setObject(warship, warshipInfo[:position][:x], warshipInfo[:position][:y])
             end
         end
     end
@@ -36,9 +38,9 @@ class GameMaster
     end
 
     def action(player)
-        response = player.action
+        response = player.getVirtualRequest("game/action")
         command, params = parseResponseForAction(response)
-        viewAction(command, params)
+        viewAction(player, command, params)
 
         case command
         when COMMANDS[:ATTACK]
@@ -55,8 +57,8 @@ class GameMaster
         return err
     end
 
-    def viewAction(command, params)
-        puts "#{player.name}\##{player.id}:
+    def viewAction(player, command, params)
+        puts "#{player.name}\##{player.userId}:
             \t command: #{command}
             \t params: #{params}"
     end
@@ -66,14 +68,14 @@ class GameMaster
     end
 
     def move(player, params)
-        fleet = player.fleetList[params[:fleetID]]
-        @map.updateInfo(fleet, params[:x], params[:y])
+        warship = player.warshipList[params[:warshipID]]
+        @map.updateInfo(warship, params[:x], params[:y])
     end
 
     def attack(player, params)
-        attacker = player.fleetList[params[:fleetID]]
+        attacker = player.warshipList[params[:warshipID]]
 
-        #@map.move(fleet, params[:x], params[:y])
+        #@map.move(warship, params[:x], params[:y])
     end
 
     def gameEnd?
